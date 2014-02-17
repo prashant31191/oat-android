@@ -168,11 +168,11 @@ public class Registration extends Activity {
 		        if (Constants.debug) Log.i(LOG_TAG, status); 
 		        
 		    } catch (ClientProtocolException e) {
-		    	Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
 		    } catch (IOException e) {
-		    	Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
 		    } catch (JSONException e) {
-		    	Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
 			}
 		    
 			return status;
