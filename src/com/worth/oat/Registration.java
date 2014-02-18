@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,6 +22,7 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -31,6 +33,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.worth.utils.Constants;
+import com.worth.utils.DatabaseHandler;
 
 public class Registration extends Activity {
 
@@ -38,7 +41,7 @@ public class Registration extends Activity {
 	EditText email, username, password, passwordConfirm;
 	String phoneNumber;
 	String usernameText, pwText, pwConfirmText, emailText;
-	String LOG_TAG = "Registration";
+	String LOGTAG = "Registration";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -132,14 +135,13 @@ public class Registration extends Activity {
 	 * Register the user on a background thread. If the registration is successful,
 	 * the user will be redirected to the dashboard. Otherwise, report the error.
 	 */
-	private class registerTask extends AsyncTask<Void, Void, String> {
+	private class registerTask extends AsyncTask<Void, Void, JSONObject> {
 
 		@Override
-		protected String doInBackground(Void... params) {
+		protected JSONObject doInBackground(Void... params) {
 			
 			HttpClient client = new DefaultHttpClient();
 			HttpPost post = new HttpPost(Constants.localhost + "/create_user");
-			String status = null;
 			
 		    try {
 		        // Add your data
@@ -164,27 +166,45 @@ public class Registration extends Activity {
 	            }
 	            String json = sb.toString();
 	            JSONObject jsonObj = new JSONObject(json);
-		        status = jsonObj.getString("status");
-		        if (Constants.debug) Log.i(LOG_TAG, status); 
+	            return jsonObj;
 		        
 		    } catch (ClientProtocolException e) {
-		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 		    } catch (IOException e) {
-		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 		    } catch (JSONException e) {
-		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 			}
 		    
-			return status;
+			return null;
 		}
 		
 		@Override
-		protected void onPostExecute(String status) {
-			if (status != null) {
-				if (status.equals("failure")) {
-					error.setText("Username/Email already exists");
-				} else {
-					// successful registration - launch dashboard
+		protected void onPostExecute(JSONObject json) {
+			if (json != null) {
+				try {
+					if (json.getString(Constants.STATUS_TAG).equals(Constants.SUCCESS_TAG)) {
+						// Add the user to the local database
+						DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+						db.addUser(json.getString(Constants.USERNAME_TAG), 
+								json.getString(Constants.EMAIL_TAG)); 
+						
+						// Check to make sure user added correctly
+						HashMap<String, String> details = db.getUserDetails();
+						if (Constants.debug) Log.i(LOGTAG, "username: " + details.get(Constants.USERNAME_TAG)
+								+ " email: " + details.get(Constants.EMAIL_TAG));
+						
+						// Launch dashboard and finish this activity
+						Intent intent = new Intent(Registration.this, Dashboard.class);
+						startActivity(intent);
+						setResult(RESULT_OK, null);
+						finish();
+					} else {
+						// Error occurred on server
+						error.setText(json.getString(Constants.REASON_TAG));
+					}
+				} catch (JSONException e) {
+					if (Constants.debug) Log.i(LOGTAG, e.getMessage()); 
 				}
 			}
 		}

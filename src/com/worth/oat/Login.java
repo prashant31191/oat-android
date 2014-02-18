@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.http.HttpResponse;
@@ -28,17 +29,27 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.worth.utils.Constants;
+import com.worth.utils.DatabaseHandler;
 
 public class Login extends Activity {
 
 	EditText user, password;
 	TextView error;
-	String LOG_TAG = "Login";
+	String LOGTAG = "Login";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.login);
+		
+		// Check to see if the user is already logged in
+		DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+		if (db.isUserLoggedIn()) {
+			// Launch dashboard activity and finish this activity
+			Intent intent = new Intent(this, Dashboard.class);
+			startActivity(intent);
+			finish();
+		}
 		
 		// Grab the views
 		user = (EditText) findViewById(R.id.user_login);
@@ -65,7 +76,21 @@ public class Login extends Activity {
 	 */
 	public void launchRegistration(View v) {
 		Intent intent = new Intent(this, Registration.class);
-		startActivity(intent);
+		startActivityForResult(intent, 1);
+	}
+	
+	/**
+	 * We want to start an activity for result so that the registration activity
+	 * can tell this activity to finish(). This is to disallow the user from 
+	 * returning to the registration or login page once logged in. 
+	 */
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == 1) {
+			if (resultCode == RESULT_OK) {
+				this.finish();
+			}
+		}
 	}
 	
 	/**
@@ -109,13 +134,13 @@ public class Login extends Activity {
 	            return jsonObj;
 	            
 			} catch (UnsupportedEncodingException e) {
-		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 			} catch (ClientProtocolException e) {
-		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 			} catch (IOException e) {
-		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 			} catch (JSONException e) {
-		    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
+		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 			}
 			
 			return null;
@@ -125,13 +150,23 @@ public class Login extends Activity {
 		protected void onPostExecute(JSONObject json) {
 			if (json != null) {
 				try {
-					if (json.getString("status").equals("success")) {
-						if (Constants.debug) Log.i(LOG_TAG, "login success");
+					if (json.getString(Constants.STATUS_TAG).equals(Constants.SUCCESS_TAG)) {
+						if (Constants.debug) Log.i(LOGTAG, "login success");
+						
+						// Add user to local database
+						DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+						db.addUser(json.getString(Constants.USERNAME_TAG), 
+								json.getString(Constants.EMAIL_TAG));
+						
+						// Launch dashboard and finish current activity 
+						Intent intent = new Intent(Login.this, Dashboard.class);
+						startActivity(intent);
+						finish();
 					} else {
-						error.setText(json.getString("reason"));
+						error.setText(json.getString(Constants.REASON_TAG));
 					}
 				} catch (JSONException e) {
-			    	if (Constants.debug) Log.i(LOG_TAG, e.getMessage());
+			    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 				}
 			}
 		}
