@@ -6,14 +6,11 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".Dashboard" >
+    tools:context=".PhotoInfo" >
 
-    <Button
-        android:id="@+id/takephoto_dashboard"
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="take photo"
-        android:onClick="launchPhotoActivity"
-        />
+        android:text="@string/hello_world" />
 
 </RelativeLayout>

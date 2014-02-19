@@ -141,7 +141,7 @@ public class Registration extends Activity {
 		protected JSONObject doInBackground(Void... params) {
 			
 			HttpClient client = new DefaultHttpClient();
-			HttpPost post = new HttpPost(Constants.localhost + "/create_user");
+			HttpPost post = new HttpPost(Constants.server + "/create_user");
 			
 		    try {
 		        // Add your data
@@ -197,7 +197,7 @@ public class Registration extends Activity {
 						// Launch dashboard and finish this activity
 						Intent intent = new Intent(Registration.this, Dashboard.class);
 						startActivity(intent);
-						setResult(RESULT_OK, null);
+						setResult(RESULT_OK);
 						finish();
 					} else {
 						// Error occurred on server

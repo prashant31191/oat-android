@@ -109,7 +109,7 @@ public class Login extends Activity {
 			
 			// Create an HTTP POST with the login credentials
 			HttpClient client = new DefaultHttpClient();
-			HttpPost post = new HttpPost(Constants.localhost + "/login");
+			HttpPost post = new HttpPost(Constants.server + "/login");
 			List<NameValuePair> pairs = new ArrayList<NameValuePair>();
 			pairs.add(new BasicNameValuePair("user", user));
 			pairs.add(new BasicNameValuePair("password", password));
