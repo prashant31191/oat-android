@@ -23,12 +23,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
+		if (Constants.debug) Log.i(LOGTAG, "surfaceCreated()");
 		try {
 			mCamera.setPreviewDisplay(holder);
 			mCamera.setDisplayOrientation(90);
 			mCamera.startPreview();
 		} catch (IOException e) {
-			Log.i(LOGTAG, e.getMessage());
+			if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 		}
 	}
 	
@@ -40,7 +41,16 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		// TODO Auto-generated method stub
-		mCamera.release();
+		if (Constants.debug) Log.i(LOGTAG, "surfaceDestroyed()"); 
+		/*
+		try {
+			mCamera.stopPreview();
+			mCamera.setPreviewDisplay(null);
+			mCamera.release();
+			mCamera = null;
+		} catch (IOException e) {
+			if (Constants.debug) Log.i(LOGTAG, e.getMessage());
+		}
+		*/
 	}
 }

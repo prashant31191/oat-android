@@ -1,22 +1,25 @@
 package com.worth.oat;
 
+import java.io.IOException;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
 import com.worth.utils.CameraPreview;
+import com.worth.utils.Constants;
 
 public class TakePhoto extends Activity {
 	
 	String LOGTAG = "TakePhoto";
 	Button photoInfo;
+	FrameLayout preview;
 	byte[] photoData;
 	private int FILL_METADATA = 2;
 	private Camera mCamera;
@@ -36,8 +39,32 @@ public class TakePhoto extends Activity {
 		
 		// Create the camera preview
 		mPreview = new CameraPreview(this, mCamera);
-		FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+		preview = (FrameLayout) findViewById(R.id.camera_preview);
 		preview.addView(mPreview);
+	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		if (Constants.debug) Log.i(LOGTAG, "onPause()");
+		mCamera.stopPreview();
+		mCamera.setPreviewCallback(null);
+		mPreview.getHolder().removeCallback(mPreview);
+		mCamera.release();
+		mCamera = null;
+	}
+	
+	@Override 
+	protected void onResume() {
+		super.onResume();
+		if (Constants.debug) Log.i(LOGTAG, "onResume()");
+		if (mCamera == null) {
+			if (Constants.debug) Log.i(LOGTAG, "camera is null");
+			mCamera = getCamera();
+			mCamera.setPreviewCallback(null);
+			mPreview = new CameraPreview(this, mCamera);
+			preview.addView(mPreview);
+		}
 	}
 
 	/**

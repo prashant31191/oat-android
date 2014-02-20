@@ -141,7 +141,7 @@ public class Registration extends Activity {
 		protected JSONObject doInBackground(Void... params) {
 			
 			HttpClient client = new DefaultHttpClient();
-			HttpPost post = new HttpPost(Constants.server + "/create_user");
+			HttpPost post = new HttpPost(Constants.localhost + "/create_user");
 			
 		    try {
 		        // Add your data

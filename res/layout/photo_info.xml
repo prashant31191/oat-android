@@ -8,9 +8,28 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".PhotoInfo" >
 
-    <TextView
+    <ImageView 
+        android:id="@+id/thumbnail_photoinfo"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        />
+    
+    <EditText
+        android:id="@+id/caption_photoinfo"
+        android:layout_below="@id/thumbnail_photoinfo"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:layout_margin="10dp"
+        android:hint="write caption..."
+        />
+    
+    <Button
+        android:id="@+id/save_photo_db"
+        android:layout_below="@id/caption_photoinfo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:text="upload"
+        android:onClick="uploadToServer"
+        />
 
 </RelativeLayout>
