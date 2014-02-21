@@ -2,6 +2,11 @@ package com.worth.utils;
 
 public class Constants {
 	
+	// Amazon keys
+	public static String AMAZON_KEY = "AKIAJQDUBLAHTQ2X4IFA";
+	public static String AMAZON_SECRET_KEY = "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";
+	public static String BUCKET_NAME = "worthdorm";
+	
 	// Turn on/off logging
 	public static boolean debug = true;
 	

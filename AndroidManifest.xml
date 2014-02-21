@@ -42,7 +42,7 @@
             android:screenOrientation="portrait" >
         </activity>
         <activity
-            android:name="com.worth.oat.PhotoInfo"
+            android:name="com.worth.oat.UploadPhoto"
             android:screenOrientation="portrait" >
         </activity>
     </application>

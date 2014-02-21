@@ -81,7 +81,7 @@ public class TakePhoto extends Activity {
 	 * he has taken a picture and would like to fill out metadata.  
 	 */
 	public void launchPhotoInfo(View v) {
-		Intent intent = new Intent(this, PhotoInfo.class);
+		Intent intent = new Intent(this, UploadPhoto.class);
 		intent.putExtra("photo", photoData);
 		startActivityForResult(intent, FILL_METADATA);
 	}
