@@ -21,7 +21,7 @@ public class TakePhoto extends Activity {
 	Button photoInfo;
 	FrameLayout preview;
 	byte[] photoData;
-	private int FILL_METADATA = 2;
+	private int UPLOAD_PHOTO = 2;
 	private Camera mCamera;
 	private CameraPreview mPreview;
 	
@@ -83,7 +83,28 @@ public class TakePhoto extends Activity {
 	public void launchPhotoInfo(View v) {
 		Intent intent = new Intent(this, UploadPhoto.class);
 		intent.putExtra("photo", photoData);
-		startActivityForResult(intent, FILL_METADATA);
+		startActivityForResult(intent, UPLOAD_PHOTO);
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == UPLOAD_PHOTO) {
+			if (resultCode == RESULT_OK) {
+				// Receive data from UploadPhoto (caption and photo)
+				String caption = data.getStringExtra("caption");
+				byte[] photoData = data.getByteArrayExtra("photo");
+				String photoId = data.getStringExtra("photoId");
+				
+				// Send the same data to the parent activity
+				Intent returnIntent = new Intent();
+				returnIntent.putExtra("caption", caption);
+				returnIntent.putExtra("photo", photoData);
+				returnIntent.putExtra("photoId", photoId);
+				setResult(RESULT_OK, returnIntent);
+				finish();
+			}
+		}
+		
 	}
 	
 	/**

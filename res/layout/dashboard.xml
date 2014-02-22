@@ -15,5 +15,12 @@
         android:text="take photo"
         android:onClick="launchPhotoActivity"
         />
+    
+    <ListView
+        android:id="@+id/dashboard_listview"
+        android:layout_below="@id/takephoto_dashboard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
 
 </RelativeLayout>

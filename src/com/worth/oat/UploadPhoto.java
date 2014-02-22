@@ -26,6 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -36,7 +37,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -46,10 +46,18 @@ import com.worth.utils.DatabaseHandler;
 
 public class UploadPhoto extends Activity {
 
+	// Debugging
 	String LOGTAG = "PhotoInfo";
+	
+	// Caption view and corresponding text
 	EditText caption; 
+	String captionText;
+	
+	// ImageView to hold the photo 
 	ImageView thumbnail;
-	byte[] photoData;
+	
+	// Bytearray of the photo
+	byte[] photoData; 
 	
 	// Create Amazon S3 Client with proper credentials
 	private AmazonS3Client s3Client = new AmazonS3Client(
@@ -78,7 +86,7 @@ public class UploadPhoto extends Activity {
 	 */
 	public void uploadToServer(View v) {
 		// Retrieve caption 
-		String captionText = caption.getText().toString();
+		captionText = caption.getText().toString();
 		
 		// Username is needed to create a photo_id
 		DatabaseHandler db = new DatabaseHandler(getApplicationContext());
@@ -214,9 +222,22 @@ public class UploadPhoto extends Activity {
 				if (Constants.debug) Log.i(LOGTAG, e.getMessage()); 
 				// An error occured when trying to put the object
 				// What to do in this case?
+				// - retry the request one more time
+				// 	 -- if it fails again, alert the user and also remove the info from the flask server
 			}
 			
 			return null;
+		}
+		
+		@Override
+		protected void onPostExecute(Void v) {
+			// Send information back to the parent activity (TakePhoto.class)
+			Intent returnIntent = new Intent();
+			returnIntent.putExtra("caption", captionText);
+			returnIntent.putExtra("photo", photoData);
+			returnIntent.putExtra("photoId", photoId);
+			setResult(RESULT_OK, returnIntent);
+			finish();
 		}
 		
 	}
