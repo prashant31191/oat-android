@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.apache.http.HttpResponse;
@@ -16,6 +15,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -30,6 +30,7 @@ import android.widget.TextView;
 
 import com.worth.utils.Constants;
 import com.worth.utils.DatabaseHandler;
+import com.worth.utils.Photo;
 
 public class Login extends Activity {
 
@@ -98,10 +99,10 @@ public class Login extends Activity {
 	 * and password as parameters. In onPostExecute(), check the response to see if we 
 	 * should launch the dashboard or report an error.  
 	 */
-	private class LoginTask extends AsyncTask<String, Void, JSONObject> {
+	private class LoginTask extends AsyncTask<String, Void, JSONArray> {
 
 		@Override
-		protected JSONObject doInBackground(String... params) {
+		protected JSONArray doInBackground(String... params) {
 			// Get the user and password from parameters passed in
 			String user = params[0];
 			String password = params[1]; 
@@ -129,9 +130,10 @@ public class Login extends Activity {
 	                sb.append(line + "\n");
 	            }
 	            String json = sb.toString();
-	            JSONObject jsonObj = new JSONObject(json);
+	            JSONArray jsonArray = new JSONArray(json);
+	            Log.i(LOGTAG, "json to string: " + jsonArray.toString());
 		        
-	            return jsonObj;
+	            return jsonArray;
 	            
 			} catch (UnsupportedEncodingException e) {
 		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
@@ -147,8 +149,41 @@ public class Login extends Activity {
 		}
 		
 		@Override
-		protected void onPostExecute(JSONObject json) {
-			if (json != null) {
+		protected void onPostExecute(JSONArray json) {
+			try {
+				if (json != null) {
+					// Get the user data first and add to database
+					String userInfo = json.getString(0);
+					JSONObject obj = new JSONObject(userInfo);
+					String email = obj.getString(Constants.EMAIL_TAG);
+					String username = obj.getString(Constants.USERNAME_TAG);
+					DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+					db.addUser(username, email);
+					
+					// Create a Photo object from the JSON and send it to dashboard
+					// to download all the images
+					JSONObject row;
+					ArrayList<Photo> allPhotos = new ArrayList<Photo>();
+					for (int i = 1; i < json.length(); i++) {
+						String s = json.getString(i);
+						row = new JSONObject(s);
+						Photo temp = new Photo(row.getString("caption"), row.getString("photo_id"));
+						allPhotos.add(temp);
+					}
+					
+					// Launch the dashboard and send the info
+					Intent intent = new Intent(Login.this, Dashboard.class);
+					intent.putParcelableArrayListExtra("photos", allPhotos);
+					startActivity(intent);
+					finish();
+				}
+			} catch (JSONException e) {
+				if (Constants.debug) Log.i(LOGTAG, e.getMessage());
+			}
+		}
+				
+				
+				/*
 				try {
 					if (json.getString(Constants.STATUS_TAG).equals(Constants.SUCCESS_TAG)) {
 						if (Constants.debug) Log.i(LOGTAG, "login success");
@@ -168,8 +203,7 @@ public class Login extends Activity {
 				} catch (JSONException e) {
 			    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 				}
-			}
-		}
+				*/
 		
 	}
 	

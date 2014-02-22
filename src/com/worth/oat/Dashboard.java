@@ -34,7 +34,7 @@ public class Dashboard extends Activity {
 		myList = (ListView) findViewById(R.id.dashboard_listview);
 		
 		// Set the listview to our custom adapter
-		ArrayList<Photo> photoArray = new ArrayList<Photo>();
+		ArrayList<Photo> photoArray = getIntent().getParcelableArrayListExtra("photos");
 		adapter = new DashboardListAdapter(this, photoArray);
 		myList.setAdapter(adapter);
 	}
