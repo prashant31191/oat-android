@@ -3,46 +3,77 @@ package com.worth.oat;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.ListView;
 
+import com.worth.caching.ImageLoader;
+import com.worth.fragments.UserPhotoList;
 import com.worth.utils.Constants;
-import com.worth.utils.DashboardListAdapter;
 import com.worth.utils.DatabaseHandler;
 import com.worth.utils.Photo;
 
 public class Dashboard extends Activity {
 	
-	String LOGTAG = "Dashboard";
-	private int CAPTURE_PHOTO = 1;
+	private final String USER_PHOTOS = "userPhotos";
+	private final String LOGTAG = "Dashboard";
+	private final int CAPTURE_PHOTO = 1;
+	
 	byte[] photoData;
 	String caption;
 	ListView myList;
-	DashboardListAdapter adapter;
+	
+	// This is essentially an interface to the cache. We instantiate it in
+	// this activity so that fragments of this activity can access it through
+	// a getter function (getImageLoader())
+	ImageLoader imageLoader; 
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.dashboard);
 		
-		// Get the activity listview
-		myList = (ListView) findViewById(R.id.dashboard_listview);
+		// Instantiate the cache
+		imageLoader = new ImageLoader(getApplicationContext()); 
 		
-		// Set the listview to our custom adapter
+		// Get the photo ArrayList that was passed in from logging in
 		ArrayList<Photo> photoArray = getIntent().getParcelableArrayListExtra("photos");
-		adapter = new DashboardListAdapter(this, photoArray);
-		myList.setAdapter(adapter);
+		if (photoArray == null) {
+			// We enter this condition if for some reason onDestroy() is called and
+			// we have to rebuild our list of photos (but we didn't get the list from Login.class).
+			DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+			photoArray = db.getAllPhotos();
+			if (Constants.debug) Log.i(LOGTAG, "onCreate - no intent with photoArray");
+			if (Constants.debug) Log.i(LOGTAG, "number of photos retrieved from db: " + photoArray.size());
+		}
+		
+		// Pass it to the fragment
+		Bundle b = new Bundle();
+		b.putParcelableArrayList("photos", photoArray);
+		UserPhotoList userPhotoFrag = new UserPhotoList();
+		userPhotoFrag.setArguments(b);
+		FragmentManager fm = getFragmentManager();
+		FragmentTransaction ft = fm.beginTransaction();
+		ft.replace(R.id.content_frame, userPhotoFrag, USER_PHOTOS);
+		ft.commit();
 	}
 
+	@Override
+	protected void onStop() {
+		super.onStop();
+	}
+	
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 		// clear cache here
+		imageLoader.clear();
+		if (Constants.debug) Log.i(LOGTAG, "onDestroy()");
 	}
 	
 	@Override
@@ -62,8 +93,30 @@ public class Dashboard extends Activity {
 				startActivity(intent);
 				finish();
 				return true;
+			case R.id.searchFriends:
+				searchFriends();
+				return true;
+			case R.id.takePhoto:
+				launchPhotoActivity();
+				return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * A getter method for fragments to access the cache
+	 * @return
+	 */
+	public ImageLoader getImageLoader() {
+		return imageLoader; 
+	}
+	
+	/**
+	 * Launch the activity to search for friends to add
+	 */
+	public void searchFriends() {
+		Intent intent = new Intent(this, SearchFriends.class);
+		startActivity(intent);
 	}
 	
 	/**
@@ -71,11 +124,16 @@ public class Dashboard extends Activity {
 	 * We want to start it for a result because the TakePhoto activity will send back 
 	 * the picture data and metadata so that we can add it to our listview. 
 	 */
-	public void launchPhotoActivity(View v) {
+	public void launchPhotoActivity() {
 		Intent intent = new Intent(this, TakePhoto.class);
 		startActivityForResult(intent, CAPTURE_PHOTO);
 	}
 	
+	/**
+	 * We receive a result from the UploadPhoto activity that contains the Photo
+	 * including its actual byte[]. We then pass the Photo to the proper list to
+	 * display as the most recent Photo.
+	 */
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == CAPTURE_PHOTO) {
@@ -85,10 +143,28 @@ public class Dashboard extends Activity {
 				photoData = data.getByteArrayExtra("photo");
 				String photoId = data.getStringExtra("photoId");
 				Photo photoInfo = new Photo(caption, photoData, photoId);
-				adapter.insertData(photoInfo);
-				adapter.notifyDataSetChanged();
+				
+				// Add to database
+				DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+				db.addPhoto(photoInfo);
+				
+				// Add to listview in fragment
+				UserPhotoList f = (UserPhotoList) getFragmentManager().findFragmentByTag(USER_PHOTOS);
+				f.updateList(photoInfo); // Call the fragment's function that add's the Photo
 			}
 		}
+	}
+	
+	/**
+	 * Override the back button to act as the home button so that onDestroy()
+	 * isn't called.
+	 */
+	@Override
+	public void onBackPressed() {
+		Intent intent = new Intent();
+		intent.setAction(Intent.ACTION_MAIN);
+		intent.addCategory(Intent.CATEGORY_HOME);
+		startActivity(intent);
 	}
 
 }

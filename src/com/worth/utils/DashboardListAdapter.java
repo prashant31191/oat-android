@@ -12,6 +12,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.worth.oat.Dashboard;
 import com.worth.oat.R;
 
 public class DashboardListAdapter extends BaseAdapter {
@@ -20,13 +21,12 @@ public class DashboardListAdapter extends BaseAdapter {
     private Activity activity;
     private ArrayList<Photo> data;
     private static LayoutInflater inflater = null;
-    ImageLoader imageLoader;
-    
+    //ImageLoader imageLoader;
 	
 	public DashboardListAdapter(Activity a, ArrayList<Photo> data) {
 		activity = a;
 		this.data = data;
-		imageLoader = new ImageLoader(a.getApplicationContext());
+		//imageLoader = new ImageLoader(a.getApplicationContext());
         inflater = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 	}
 	
@@ -41,7 +41,8 @@ public class DashboardListAdapter extends BaseAdapter {
 		data.add(0, photo);
 		Log.i(LOGTAG, "Inserting data into ArrayList<Photo>...new size: " + data.size());
 		Log.i(LOGTAG, "Photo caption: " + photo.getCaption());
-		imageLoader.addToCache(photo.getPhotoId(), photo.getPhoto());
+		//imageLoader.addToCache(photo.getPhotoId(), photo.getPhoto());
+		((Dashboard) activity).getImageLoader().addToCache(photo.getPhotoId(), photo.getPhoto());
 	}
 
 	@Override
@@ -73,7 +74,8 @@ public class DashboardListAdapter extends BaseAdapter {
         caption.setText(data.get(position).getCaption());
         
         // Display the photo (download it if necessary)
-        imageLoader.displayImage(data.get(position), photoView);
+        ((Dashboard) activity).getImageLoader().displayImage(data.get(position), photoView);
+        //imageLoader.displayImage(data.get(position), photoView);
         
 		return vi;
 	}

@@ -11,10 +11,11 @@ public class Constants {
 	public static boolean debug = true;
 	
 	// Server addresses
-	public static String localhost = "http://10.0.2.2:8000";
-	public static String server = "https://oat-worth.herokuapp.com";
+	public static String server = //"https://oat-worth.herokuapp.com";
+			"http://10.0.2.2:8000";
 	
 	// JSON Responses
+	public static String TAG = "tag";
 	public static String STATUS_TAG = "status";
 	public static String SUCCESS_TAG = "success";
 	public static String FAILURE_TAG = "failure";
@@ -22,5 +23,10 @@ public class Constants {
 	public static String USERNAME_TAG = "username";
 	public static String UID_TAG = "uid";
 	public static String EMAIL_TAG = "email";
+	public static String ADD_FRIEND = "add_friend";
+	public static String REMOVE_FRIEND = "remove_friend";
+	
+	// Name for shared preferences
+	public static String SHARED_PREF = "com.oat";
 	
 }

@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="libs/aws-android-sdk-1.7.1.1-core.jar"/>
 	<classpathentry kind="lib" path="libs/aws-android-sdk-1.7.1.1-s3.jar"/>
 	<classpathentry kind="lib" path="libs/commons-io-2.4.jar"/>
+	<classpathentry kind="lib" path="libs/disklrucache-2.0.2.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

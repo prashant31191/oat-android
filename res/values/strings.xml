@@ -8,5 +8,8 @@
     <string name="title_activity_dashboard">Dashboard</string>
     <string name="title_activity_take_photo">TakePhoto</string>
     <string name="title_activity_photo_info">PhotoInfo</string>
+    <string name="title_activity_search_friends">SearchFriends</string>
+    <string name="title_activity_search_username">SearchUsername</string>
+    <string name="title_activity_search_contacts">SearchContacts</string>
 
 </resources>

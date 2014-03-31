@@ -1,27 +1,13 @@
 package com.worth.oat;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.List;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -30,13 +16,17 @@ import android.widget.TextView;
 
 import com.worth.utils.Constants;
 import com.worth.utils.DatabaseHandler;
+import com.worth.utils.NetworkFunctions;
+import com.worth.utils.NetworkRequest;
+import com.worth.utils.NetworkRequest.NetworkCallback;
 import com.worth.utils.Photo;
 
-public class Login extends Activity {
+public class Login extends Activity implements NetworkCallback {
 
 	EditText user, password;
 	TextView error;
 	String LOGTAG = "Login";
+	String jsonString; 
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +57,12 @@ public class Login extends Activity {
 		String userText = user.getText().toString();
 		String passwordText = password.getText().toString();
 		
+		// Make the request
+		NetworkRequest network = new NetworkRequest(this);
+		new NetworkFunctions(network).login(userText, passwordText);
+		
 		// Launch asynctask to login user
-		new LoginTask().execute(userText, passwordText);
+		// new LoginTask().execute(userText, passwordText);
 	}
 	
 	/**
@@ -94,82 +88,31 @@ public class Login extends Activity {
 		}
 	}
 	
-	/**
-	 * An AsyncTask to check the user's login credentials. Pass in the username/email
-	 * and password as parameters. In onPostExecute(), check the response to see if we 
-	 * should launch the dashboard or report an error.  
-	 */
-	private class LoginTask extends AsyncTask<String, Void, JSONArray> {
-
-		@Override
-		protected JSONArray doInBackground(String... params) {
-			// Get the user and password from parameters passed in
-			String user = params[0];
-			String password = params[1]; 
-			String status = null;
-			
-			// Create an HTTP POST with the login credentials
-			HttpClient client = new DefaultHttpClient();
-			HttpPost post = new HttpPost(Constants.localhost + "/login");
-			List<NameValuePair> pairs = new ArrayList<NameValuePair>();
-			pairs.add(new BasicNameValuePair("user", user));
-			pairs.add(new BasicNameValuePair("password", password));
-			
+	@Override
+	public void onRequestComplete(String json) {
+		if (json != null) {
 			try {
-				post.setEntity(new UrlEncodedFormEntity(pairs));
+				JSONArray jsonArray = new JSONArray(json);
+				JSONObject obj = jsonArray.getJSONObject(0);
 				
-		        // Execute HTTP Post Request
-		        HttpResponse response = client.execute(post);
-		        
-		        // Convert response into JSON 
-		        BufferedReader buffReader = new BufferedReader(
-		        		new InputStreamReader(response.getEntity().getContent(), "utf-8"), 8);
-	            StringBuilder sb = new StringBuilder();
-	            String line = null;
-	            while ((line = buffReader.readLine()) != null) {
-	                sb.append(line + "\n");
-	            }
-	            String json = sb.toString();
-	            JSONArray jsonArray = new JSONArray(json);
-	            Log.i(LOGTAG, "json to string: " + jsonArray.toString());
-		        
-	            return jsonArray;
-	            
-			} catch (UnsupportedEncodingException e) {
-		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
-			} catch (ClientProtocolException e) {
-		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
-			} catch (IOException e) {
-		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
-			} catch (JSONException e) {
-		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
-			}
-			
-			return null;
-		}
-		
-		@Override
-		protected void onPostExecute(JSONArray json) {
-			try {
-				if (json != null) {
-					// Get the user data first and add to database
-					String userInfo = json.getString(0);
-					JSONObject obj = new JSONObject(userInfo);
+				if (obj.getString(Constants.STATUS_TAG).equals(Constants.SUCCESS_TAG)) {
 					String email = obj.getString(Constants.EMAIL_TAG);
 					String username = obj.getString(Constants.USERNAME_TAG);
 					DatabaseHandler db = new DatabaseHandler(getApplicationContext());
 					db.addUser(username, email);
 					
-					// Create a Photo object from the JSON and send it to dashboard
+					// Create photo objects from the JSON and send it to dashboard
 					// to download all the images
 					JSONObject row;
 					ArrayList<Photo> allPhotos = new ArrayList<Photo>();
-					for (int i = 1; i < json.length(); i++) {
-						String s = json.getString(i);
-						row = new JSONObject(s);
+					for (int i = 1; i < jsonArray.length(); i++) {
+						row = jsonArray.getJSONObject(i);
 						Photo temp = new Photo(row.getString("caption"), row.getString("photo_id"));
 						allPhotos.add(temp);
 					}
+					// Add all photos to android database
+					int numAdded = db.addPhotos(allPhotos);
+					if (Constants.debug) Log.i(LOGTAG, "number of photos added to db: " + numAdded);
 					
 					// Launch the dashboard and send the info
 					Intent intent = new Intent(Login.this, Dashboard.class);
@@ -177,34 +120,11 @@ public class Login extends Activity {
 					startActivity(intent);
 					finish();
 				}
+				
 			} catch (JSONException e) {
-				if (Constants.debug) Log.i(LOGTAG, e.getMessage());
+				if (Constants.debug) Log.i(LOGTAG, e.getMessage()); 
 			}
 		}
-				
-				
-				/*
-				try {
-					if (json.getString(Constants.STATUS_TAG).equals(Constants.SUCCESS_TAG)) {
-						if (Constants.debug) Log.i(LOGTAG, "login success");
-						
-						// Add user to local database
-						DatabaseHandler db = new DatabaseHandler(getApplicationContext());
-						db.addUser(json.getString(Constants.USERNAME_TAG), 
-								json.getString(Constants.EMAIL_TAG));
-						
-						// Launch dashboard and finish current activity 
-						Intent intent = new Intent(Login.this, Dashboard.class);
-						startActivity(intent);
-						finish();
-					} else {
-						error.setText(json.getString(Constants.REASON_TAG));
-					}
-				} catch (JSONException e) {
-			    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
-				}
-				*/
-		
 	}
 	
 

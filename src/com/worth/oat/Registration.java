@@ -1,22 +1,9 @@
 package com.worth.oat;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,7 +11,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -34,8 +20,11 @@ import android.widget.TextView;
 
 import com.worth.utils.Constants;
 import com.worth.utils.DatabaseHandler;
+import com.worth.utils.NetworkFunctions;
+import com.worth.utils.NetworkRequest;
+import com.worth.utils.NetworkRequest.NetworkCallback;
 
-public class Registration extends Activity {
+public class Registration extends Activity implements NetworkCallback {
 
 	TextView error;
 	EditText email, username, password, passwordConfirm;
@@ -76,7 +65,8 @@ public class Registration extends Activity {
 		
 		// Check the validity of the input
 		if (validateInput(usernameText, emailText, pwText, pwConfirmText)) {
-			new registerTask().execute();
+			NetworkRequest request = new NetworkRequest(this);
+			new NetworkFunctions(request).register(usernameText, pwText, emailText, phoneNumber);
 		} 
 	}
 	
@@ -130,86 +120,36 @@ public class Registration extends Activity {
 		
 		return true;
 	}
-	
-	/**
-	 * Register the user on a background thread. If the registration is successful,
-	 * the user will be redirected to the dashboard. Otherwise, report the error.
-	 */
-	private class registerTask extends AsyncTask<Void, Void, JSONObject> {
 
-		@Override
-		protected JSONObject doInBackground(Void... params) {
-			
-			HttpClient client = new DefaultHttpClient();
-			HttpPost post = new HttpPost(Constants.localhost + "/create_user");
-			
-		    try {
-		        // Add your data
-		        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-		        nameValuePairs.add(new BasicNameValuePair("username", usernameText));
-		        nameValuePairs.add(new BasicNameValuePair("email", emailText));
-		        nameValuePairs.add(new BasicNameValuePair("password", pwText));
-		        nameValuePairs.add(new BasicNameValuePair("phone_number", phoneNumber));
-		        
-		        post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-		        // Execute HTTP Post Request
-		        HttpResponse response = client.execute(post);
-		        
-		        // Convert response into JSON 
-		        BufferedReader buffReader = new BufferedReader(
-		        		new InputStreamReader(response.getEntity().getContent(), "utf-8"), 8);
-	            StringBuilder sb = new StringBuilder();
-	            String line = null;
-	            while ((line = buffReader.readLine()) != null) {
-	                sb.append(line + "\n");
-	            }
-	            String json = sb.toString();
-	            JSONObject jsonObj = new JSONObject(json);
-	            return jsonObj;
-		        
-		    } catch (ClientProtocolException e) {
-		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
-		    } catch (IOException e) {
-		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
-		    } catch (JSONException e) {
-		    	if (Constants.debug) Log.i(LOGTAG, e.getMessage());
-			}
-		    
-			return null;
-		}
-		
-		@Override
-		protected void onPostExecute(JSONObject json) {
-			if (json != null) {
-				try {
-					if (json.getString(Constants.STATUS_TAG).equals(Constants.SUCCESS_TAG)) {
-						// Add the user to the local database
-						DatabaseHandler db = new DatabaseHandler(getApplicationContext());
-						db.addUser(json.getString(Constants.USERNAME_TAG), 
-								json.getString(Constants.EMAIL_TAG)); 
-						
-						// Check to make sure user added correctly
-						HashMap<String, String> details = db.getUserDetails();
-						if (Constants.debug) Log.i(LOGTAG, "username: " + details.get(Constants.USERNAME_TAG)
-								+ " email: " + details.get(Constants.EMAIL_TAG));
-						
-						// Launch dashboard and finish this activity
-						Intent intent = new Intent(Registration.this, Dashboard.class);
-						startActivity(intent);
-						setResult(RESULT_OK);
-						finish();
-					} else {
-						// Error occurred on server
-						error.setText(json.getString(Constants.REASON_TAG));
-					}
-				} catch (JSONException e) {
-					if (Constants.debug) Log.i(LOGTAG, e.getMessage()); 
+	@Override
+	public void onRequestComplete(String j) {
+		if (j != null) {
+			try {
+				JSONObject json = new JSONObject(j);
+				if (json.getString(Constants.STATUS_TAG).equals(Constants.SUCCESS_TAG)) {
+					// Add the user to the local database
+					DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+					db.addUser(json.getString(Constants.USERNAME_TAG), 
+							json.getString(Constants.EMAIL_TAG)); 
+					
+					// Check to make sure user added correctly
+					HashMap<String, String> details = db.getUserDetails();
+					if (Constants.debug) Log.i(LOGTAG, "username: " + details.get(Constants.USERNAME_TAG)
+							+ " email: " + details.get(Constants.EMAIL_TAG));
+					
+					// Launch dashboard and finish this activity
+					Intent intent = new Intent(Registration.this, Dashboard.class);
+					startActivity(intent);
+					setResult(RESULT_OK);
+					finish();
+				} else {
+					// Error occurred on server
+					error.setText(json.getString(Constants.REASON_TAG));
 				}
+			} catch (JSONException e) {
+				if (Constants.debug) Log.i(LOGTAG, e.getMessage());
 			}
 		}
-		
-		
 	}
 
 }

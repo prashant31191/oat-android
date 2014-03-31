@@ -19,7 +19,7 @@ public class Photo implements Parcelable {
 	public Photo(String caption, byte[] photo, String photoId) {
 		this.caption = caption;
 		this.photo = photo;
-		//this.photoId = photoId;
+		this.photoId = photoId;
 	};
 	
 	public Photo(Parcel in) {

@@ -116,7 +116,7 @@ public class UploadPhoto extends Activity {
 			// Create a photo_id
 			// Create an instance of SimpleDateFormat used for formatting 
 			// the string representation of date (month/day/year)
-			DateFormat df = new SimpleDateFormat("MM-dd-yyyy-HH:mm:ss", Locale.getDefault());
+			DateFormat df = new SimpleDateFormat("MM_dd_yyyy_HH_mm_ss", Locale.getDefault());
 
 			// Get the date today using Calendar object.
 			Date today = Calendar.getInstance().getTime();        
@@ -128,7 +128,7 @@ public class UploadPhoto extends Activity {
 			String photoId = username + "_" + reportDate + ".jpeg";
 			
 			HttpClient client = new DefaultHttpClient();
-			HttpPost post = new HttpPost(Constants.localhost + "/upload_photo");
+			HttpPost post = new HttpPost(Constants.server + "/upload_photo");
 			
 			List<NameValuePair> postInfo = new ArrayList<NameValuePair>();
 			postInfo.add(new BasicNameValuePair("caption", caption));

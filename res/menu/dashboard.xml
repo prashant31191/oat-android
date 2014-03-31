@@ -11,5 +11,17 @@
         android:title="logout"
         android:showAsAction="always"
         />
+    
+    <item
+        android:id="@+id/searchFriends"
+        android:title="search_friends"
+        android:showAsAction="always"
+        />
+    
+    <item
+        android:id="@+id/takePhoto"
+        android:title="take_photo"
+        android:showAsAction="always"
+        />
 
 </menu>
